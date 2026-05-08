@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pióro — Smart Writing Assistant</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f4f1eb;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+
+    header h1 {
+      font-size: 2.4rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      letter-spacing: -0.5px;
+    }
+
+    header h1 span { color: #6c63ff; }
+
+    header p {
+      color: #666;
+      margin-top: 6px;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+      padding: 28px;
+      width: 100%;
+      max-width: 760px;
+    }
+
+    .lang-badge {
+      display: inline-block;
+      background: #ede9fe;
+      color: #6c63ff;
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+      min-width: 60px;
+      text-align: center;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 180px;
+      border: 2px solid #e5e5e5;
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 1rem;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      font-family: inherit;
+      color: #1a1a2e;
+    }
+
+    textarea:focus { border-color: #6c63ff; }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 14px;
+    }
+
+    #charCount { font-size: 0.82rem; color: #aaa; }
+
+    button#checkBtn {
+      background: #6c63ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 28px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button#checkBtn:hover { background: #574fd6; }
+    button#checkBtn:active { transform: scale(0.98); }
+    button#checkBtn:disabled { background: #c4c0f0; cursor: not-allowed; }
+
+    #results { margin-top: 28px; display: none; }
+
+    .corrected-box {
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+      border-radius: 10px;
+      padding: 16px;
+      font-size: 1rem;
+      line-height: 1.7;
+      color: #14532d;
+      position: relative;
+    }
+
+    .corrected-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .corrected-header span {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #16a34a;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    #copyBtn {
+      background: none;
+      border: 1.5px solid #86efac;
+      color: #16a34a;
+      border-radius: 6px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    #copyBtn:hover { background: #dcfce7; }
+
+    .changes-section { margin-top: 22px; }
+
+    .changes-section h3 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .change-item {
+      background: #fafafa;
+      border-left: 3px solid #6c63ff;
+      border-radius: 0 8px 8px 0;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+    }
+
+    .change-diff {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 5px;
+    }
+
+    .original {
+      background: #fee2e2;
+      color: #991b1b;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.92rem;
+      text-decoration: line-through;
+    }
+
+    .arrow { color: #aaa; font-size: 0.85rem; }
+
+    .fixed {
+      background: #dcfce7;
+      color: #166534;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 0.92rem;
+      font-weight: 500;
+    }
+
+    .explanation {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .overall-box {
+      margin-top: 18px;
+      background: #ede9fe;
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      color: #4c1d95;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .overall-box .icon { font-size: 1.1rem; flex-shrink: 0; }
+
+    .no-errors {
+      text-align: center;
+      padding: 20px;
+      color: #16a34a;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .spinner {
+      display: none;
+      width: 20px; height: 20px;
+      border: 3px solid #e5e5e5;
+      border-top-color: #6c63ff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      color: #dc2626;
+      background: #fef2f2;
+      border-radius: 8px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Pióro <span>✦</span></h1>
+  <p>Smart grammar & style assistant — Polish, English, French, Spanish, German, and more</p>
+</header>
+
+<div class="card">
+  <div class="lang-badge" id="langBadge">Auto-detect</div>
+  <textarea id="inputText" placeholder="Wpisz tutaj tekst po polsku lub w innym języku... (Type here in any language)"></textarea>
+  <div class="toolbar">
+    <span id="charCount">0 characters</span>
+    <button id="checkBtn" onclick="checkGrammar()">Check ✦</button>
+  </div>
+</div>
+
+<div class="card" id="results">
+  <div id="spinner" class="spinner"></div>
+  <div id="output"></div>
+</div>
+
+<script>
+  const textarea = document.getElementById("inputText");
+  const charCount = document.getElementById("charCount");
+  const results = document.getElementById("results");
+
+  textarea.addEventListener("input", () => {
+    charCount.textContent = textarea.value.length + " characters";
+  });
+
+  textarea.addEventListener("keydown", (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") checkGrammar();
+  });
+
+  async function checkGrammar() {
+    const text = textarea.value.trim();
+    if (!text) return;
+
+    const btn = document.getElementById("checkBtn");
+    const spinner = document.getElementById("spinner");
+    const output = document.getElementById("output");
+
+    btn.disabled = true;
+    btn.textContent = "Checking...";
+    spinner.style.display = "block";
+    output.innerHTML = "";
+    results.style.display = "block";
+
+    try {
+      const res = await fetch("/check", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text })
+      });
+
+      const data = await res.json();
+      spinner.style.display = "none";
+
+      if (data.error) {
+        output.innerHTML = `<div class="error-msg">Error: ${data.error}</div>`;
+        return;
+      }
+
+      document.getElementById("langBadge").textContent = data.language || "Unknown";
+
+      let html = "";
+
+      // Corrected text
+      html += `<div class="corrected-header">
+        <span>Corrected Text</span>
+        <button id="copyBtn" onclick="copyText()">Copy</button>
+      </div>`;
+
+      if (data.changes && data.changes.length > 0) {
+        html += `<div class="corrected-box" id="correctedText">${escapeHtml(data.corrected)}</div>`;
+
+        html += `<div class="changes-section"><h3>${data.changes.length} correction${data.changes.length > 1 ? "s" : ""} found</h3>`;
+        for (const c of data.changes) {
+          html += `<div class="change-item">
+            <div class="change-diff">
+              <span class="original">${escapeHtml(c.original)}</span>
+              <span class="arrow">→</span>
+              <span class="fixed">${escapeHtml(c.fixed)}</span>
+            </div>
+            <div class="explanation">${escapeHtml(c.explanation)}</div>
+          </div>`;
+        }
+        html += `</div>`;
+      } else {
+        html += `<div class="no-errors">✓ No errors found — your text looks great!</div>`;
+      }
+
+      if (data.overall) {
+        html += `<div class="overall-box"><span class="icon">💬</span><span>${escapeHtml(data.overall)}</span></div>`;
+      }
+
+      output.innerHTML = html;
+    } catch (err) {
+      spinner.style.display = "none";
+      output.innerHTML = `<div class="error-msg">Something went wrong. Make sure the server is running.</div>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Check ✦";
+    }
+  }
+
+  function copyText() {
+    const el = document.getElementById("correctedText");
+    if (el) {
+      navigator.clipboard.writeText(el.textContent);
+      const btn = document.getElementById("copyBtn");
+      btn.textContent = "Copied!";
+      setTimeout(() => btn.textContent = "Copy", 1500);
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+</script>
+
+</body>
+</html>
